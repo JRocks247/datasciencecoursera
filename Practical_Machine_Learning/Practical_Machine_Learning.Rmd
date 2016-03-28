@@ -1,0 +1,105 @@
+---
+title: "Practical Machine Learning - Peer Assessment"
+author: "John Allen"
+date: "Thursday, March 24, 2016"
+output: html_document
+---
+
+##Executive Summary
+
+#####For the Practical Machine Learning Peer Assessment we will build a prediction model to predict the manner in which a subject has excersised from the data collected via their personal activity device.
+
+#####By using a random forests model and removing the columns that have less than 60% of the data entered, a predictive model accuracy over the validation dataset of 99.9% is acheived.
+
+###Load the libraries and Set Seed
+#####Load all libraries used, and set the working directory
+```{r,message=FALSE}
+setwd("C:/Users/Jono/Desktop/Coursera/Practical_Machine_Learning")
+library(rpart)
+library(caret)
+library(randomForest)
+library(rpart.plot)
+library(corrplot)
+```
+
+#####Load the training and testing datasets
+
+```{r,results='hide'}
+training <- read.csv("./Data/pml-training-1.csv", header=TRUE)
+testing <- read.csv("./Data/pml-testing.csv", header=TRUE)
+dim(training)
+dim(testing)
+```
+
+###DATA PROCESSING
+
+#####First we will clean the data of obeservations with missing values, observations with near zero variance and the variables that are not needed for the exercise. I will then partition the data in to two datasets.
+
+````{r}
+sum(complete.cases(training))
+```
+
+####Removing incomplete columns
+
+```{r}
+training <- training[, colSums(is.na(training)) == 0]
+testing <- testing[, colSums(is.na(testing)) == 0]
+dim(training)
+```
+
+#####Removing unneeded columns, which happens to be the first 5 columns
+
+```{r}
+training <- training[, -(1:5)]
+```
+
+#####Removing observations with near zero variance
+
+```{r}
+nzv <- nearZeroVar(training)
+training <- training[, -nzv]
+dim(training)
+```
+
+#####Here I will seperate the data (training1) into a smaller set and validation set (training2).  This is done to be able to estimate the out-of-sample error rate.
+
+```{r}
+set.seed(100)
+inTrain = createDataPartition(training$classe, p=0.60, list=FALSE)
+training1 = training[inTrain,]
+validating1 = training[-inTrain,]
+```
+
+###MODEL BUILD
+
+#####First we will fit a random forest mode, check the importance and  then check the performance on the validation1 set by running it through a confusion matrix.
+
+```{r}
+FrstModel <- randomForest(classe~.,data=training1)
+print(FrstModel)
+```
+
+```{r}
+#check the importance
+importance(FrstModel)
+```
+
+```{r}
+predictRf <- predict(FrstModel, validating1)
+confusionMatrix(validating1$classe, predictRf)
+```
+
+```{r}
+accuracy<-c(as.numeric(predict(FrstModel,newdata=validating1[,-ncol(validating1)])==validating1$classe))
+accuracy<-sum(accuracy)*100/nrow(validating1)
+accuracy
+```
+####Here it is shown the accuracy of the model applied to the validation set (validating1) comes in at 99.65%
+
+#####The only step left is to apply the model to the original testing set downloaded aquired from the data source.
+
+```{r}
+FinalTest <- predict(FrstModel, testing)
+FinalTest
+```
+
