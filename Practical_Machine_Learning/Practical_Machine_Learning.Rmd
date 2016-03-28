@@ -2,7 +2,7 @@
 title: "Practical Machine Learning - Peer Assessment"
 author: "John Allen"
 date: "Thursday, March 24, 2016"
-output: html_document
+output: pdf_document
 ---
 
 ##Executive Summary
